@@ -3,8 +3,8 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Oracle Mock Exam',
-  description: 'CBT-like mock exam for OM Silver SQL 2019',
+  title: 'Silver SQL 2019模擬試験プログラム',
+  description: 'Silver SQL 2019のCBT試験ライクの模擬試験を提供するアプリケーションです。',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
