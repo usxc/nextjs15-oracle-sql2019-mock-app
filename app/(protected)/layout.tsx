@@ -1,6 +1,12 @@
+// app/(protected)/layout.tsx
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in'); // 未ログインならサインインへ
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="h-14 border-b bg-white flex items-center justify-between px-4">
