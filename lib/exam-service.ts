@@ -63,3 +63,8 @@ export async function scoreAttempt(attemptId: string) {
     data:{ score, isPassed, finishedAt, durationSec, status: new Date()>a.expiresAt ? 'EXPIRED':'FINISHED' }
   });
 }
+
+export async function finishAttempt({ attemptId, end }:{attemptId:string; end:'USER_FINISH'|'TIMEOUT'}) {
+  await prisma.examAttempt.update({ where:{ id: attemptId }, data:{ endReason: end } });
+  return scoreAttempt(attemptId);
+}
