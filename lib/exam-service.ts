@@ -36,3 +36,30 @@ function isCorrect(type: QuestionType, selected: string[], correct: string[]) {
   const s = new Set(selected);
   return correct.every(id=>s.has(id));
 }
+
+export async function scoreAttempt(attemptId: string) {
+  const a = await prisma.examAttempt.findUnique({
+    where:{ id: attemptId },
+    include:{ template:true, questions:{ include:{ question:{ include:{ choices:true } }, answer:true } } }
+  });
+  if(!a) throw new Error('Attempt not found');
+
+  let correctCount=0;
+  for(const q of a.questions){
+    const correctIds = q.question.choices.filter(c=>c.isCorrect).map(c=>c.id);
+    const selected = q.answer?.selectedChoiceIds ?? [];
+    const ok = isCorrect(q.question.type, selected, correctIds);
+    if(ok) correctCount++;
+    await prisma.attemptQuestion.update({ where:{ id:q.id }, data:{ isCorrect: ok, answeredAt: q.answer ? q.answer.updatedAt : q.answeredAt }});
+  }
+
+  const score = correctCount / a.template.questionCount;
+  const isPassed = score >= a.template.passThreshold;
+  const finishedAt = new Date();
+  const durationSec = Math.max(1, Math.round((finishedAt.getTime()-a.startedAt.getTime())/1000));
+
+  return prisma.examAttempt.update({
+    where:{ id: attemptId },
+    data:{ score, isPassed, finishedAt, durationSec, status: new Date()>a.expiresAt ? 'EXPIRED':'FINISHED' }
+  });
+}
