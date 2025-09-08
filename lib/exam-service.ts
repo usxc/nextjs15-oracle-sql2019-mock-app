@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { ExamAttempt } from '@prisma/client';
+import { ExamAttempt, QuestionType } from '@prisma/client';
 
 function shuffle<T>(a: T[]) { const x=[...a]; for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];} return x; }
 
@@ -28,4 +28,11 @@ export async function canUpdateNow(attempt: ExamAttempt | string) {
   if (!a) return false;
   if (a.status!=='IN_PROGRESS') return false;
   return new Date() <= a.expiresAt;
+}
+
+function isCorrect(type: QuestionType, selected: string[], correct: string[]) {
+  if (type==='SINGLE') return selected.length===1 && correct.length===1 && selected[0]===correct[0];
+  if (selected.length!==correct.length) return false;
+  const s = new Set(selected);
+  return correct.every(id=>s.has(id));
 }
