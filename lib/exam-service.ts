@@ -3,24 +3,48 @@ import { ExamAttempt, QuestionType } from '@prisma/client';
 
 function shuffle<T>(a: T[]) { const x=[...a]; for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];} return x; }
 
-export async function createAttempt({ userId, templateId }:{userId:string; templateId:string;}) {
-  const t = await prisma.examTemplate.findUnique({ where: { id: templateId } });
-  if (!t) throw new Error('Template not found');
+export async function createAttempt({
+  userId,
+  // 受け取るのは「ExamTemplate の id」なので、あえてエイリアスして分かりやすく
+  templateId: examTemplateId,
+}: { userId: string; templateId: string }) {
+  // 試験テンプレートを取得（出題数・制限時間・合格基準の単一情報源）
+  const template = await prisma.examTemplate.findUnique({ where: { id: examTemplateId } });
+  if (!template) throw new Error('Template not found');
 
-  const qs = await prisma.question.findMany({ where: { templateId }, include: { choices: true } });
-  if (qs.length < t.questionCount) throw new Error(`問題数不足 (${qs.length}/${t.questionCount})`);
-  const picked = shuffle(qs).slice(0, t.questionCount);
-
-  const startedAt = new Date();
-  const expiresAt = new Date(startedAt.getTime() + t.durationSec * 1000);
-
-  return prisma.examAttempt.create({
-    data: {
-      userId, templateId, startedAt, expiresAt, status: 'IN_PROGRESS',
-      questions: { create: picked.map((q,i)=>({questionId:q.id,orderIndex:i+1,shuffledChoiceIds:shuffle(q.choices.map(c=>c.id))})) },
-    },
-    include: { template: true }
+  // テンプレに紐づく問題＋選択肢を取得
+  const questions = await prisma.question.findMany({
+    where: { templateId: examTemplateId },
+    include: { choices: true },
   });
+
+  // 出題数を満たしているか確認し、ランダム抽選
+  if (questions.length < template.questionCount) {
+    throw new Error(`問題数不足 (${questions.length}/${template.questionCount})`);
+  }
+  const selectedQuestions = shuffle(questions).slice(0, template.questionCount);
+
+  // 受験の開始・締切時刻を決定
+  const startedAt = new Date();
+  const expiresAt = new Date(startedAt.getTime() + template.durationSec * 1000);
+
+  // 受験レコードを作成（子レコードに問題と「選択肢の表示順」を格納）
+  return prisma.examAttempt.create({
+        data: {
+            // ExamAttempt を1件 INSERT
+            userId, templateId: examTemplateId, startedAt, expiresAt, status: 'IN_PROGRESS',
+
+            // その attempt にぶら下がる AttemptQuestion を複数 INSERT
+            questions: {
+            create: selectedQuestions.map((q, i) => ({
+                questionId: q.id,       // 既存 Question を参照
+                orderIndex: i + 1,      // 出題順
+                shuffledChoiceIds: shuffle(q.choices.map(c => c.id)), // 選択肢の表示順
+            })),
+            },
+        },
+        include: { template: true },  // 返り値に ExamTemplate を“同梱して返すだけ”
+    });
 }
 
 export async function canUpdateNow(attempt: ExamAttempt | string) {
