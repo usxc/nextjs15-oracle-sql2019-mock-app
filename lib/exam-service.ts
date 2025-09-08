@@ -1,4 +1,5 @@
 import { prisma } from './db';
+import { ExamAttempt } from '@prisma/client';
 
 function shuffle<T>(a: T[]) { const x=[...a]; for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];} return x; }
 
@@ -20,4 +21,11 @@ export async function createAttempt({ userId, templateId }:{userId:string; templ
     },
     include: { template: true }
   });
+}
+
+export async function canUpdateNow(attempt: ExamAttempt | string) {
+  const a = typeof attempt==='string' ? await prisma.examAttempt.findUnique({ where: { id: attempt } }) : attempt;
+  if (!a) return false;
+  if (a.status!=='IN_PROGRESS') return false;
+  return new Date() <= a.expiresAt;
 }
