@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth"
+import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
@@ -13,7 +14,16 @@ export default async function Home() {
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-6">
             <section className="flex items-center gap-4">
-                {imageUrl && <img src={imageUrl} alt="avatar" className="w-16 h-16 rounded-full" />}
+                {imageUrl && (
+                    <Image
+                        src={imageUrl}
+                        alt="avatar"
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 rounded-full"
+                        unoptimized
+                    />
+                )}
                 <div>
                     <div className="text-lg font-semibold">{name}</div>
                     <p className="text-sm text-gray-600">OM Silver SQL 2019 模試 / 78問 / 120分 / 合格63%</p>
