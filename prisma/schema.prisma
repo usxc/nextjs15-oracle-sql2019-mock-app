@@ -8,113 +8,201 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+/// 単一選択 or 複数選択の問題種別
 enum QuestionType {
+  /// 単一選択（ラジオ）
   SINGLE
+  /// 複数選択（チェックボックス）
   MULTI
 }
 
+/// 受験（Attempt）の進行状態
 enum AttemptStatus {
+  /// 受験中
   IN_PROGRESS
+  /// 受験者が終了を確定
   FINISHED
+  /// 時間切れによる終了
   EXPIRED
 }
 
+/// 受験終了の理由
 enum EndReason {
+  /// 受験者操作で終了
   USER_FINISH
+  /// タイムアウトで終了
   TIMEOUT
 }
 
+/// アプリ内ユーザープロフィール（認証IDに1対1で紐づく）
 model UserProfile {
-  userId      String   @id // Clerk user id (PK)
+  /// Clerk のユーザーID（アプリ内の主キー）
+  userId      String   @id
+  /// 表示名
   displayName String
+  /// アイコン画像URL
   imageUrl    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
+/// 試験テンプレート（試験の設計図）
 model ExamTemplate {
+  /// テンプレートID
   id            String        @id @default(uuid())
+  /// テンプレート名（例：模試 2025-春）
   name          String
+  /// 出題数（AttemptQuestion はこの数だけ作成）
   questionCount Int           @default(78)
+  /// 制限時間（秒）
   durationSec   Int           @default(7200)
+  /// 合格閾値（0.0〜1.0：正答率）
   passThreshold Float         @default(0.63)
+  /// 受験可能かどうか（停止したいときに false）
   isActive      Boolean       @default(true)
+
+  /// このテンプレートに属する設問
   questions     Question[]
+  /// このテンプレートを使った受験履歴
   attempts      ExamAttempt[]
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
 
+/// 設問（テンプレート配下）
 model Question {
+  /// 設問ID
   id          String        @id @default(uuid())
+  /// 所属テンプレート
   templateId  String
   template    ExamTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  /// 外部参照用の一意コード（例：Q-2025-001）
   code        String        @unique
+  /// 問題タイプ（単一/複数）
   type        QuestionType
+  /// 問題文（複数行想定）
   text        String
+  /// 解説（受験後レビュー用）
   explanation String
+
+  /// 選択肢（少なくとも1つは isCorrect=true を持つ想定）
   choices     Choice[]
+
+  /// 各受験におけるこの設問の出題レコード
   attemptQuestions AttemptQuestion[]
+
+  /// タグ（PostgreSQL の text[]。例：["ネットワーク","DNS"]）
   tags        String[]
+
+  /// 難易度（任意：1=易〜などの自前スケール）
   difficulty  Int?
+
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
 
+/// 選択肢
 model Choice {
+  /// 選択肢ID
   id         String   @id @default(uuid())
+  /// 所属設問
   questionId String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  /// 選択肢の本文
   text       String
+  /// 正解フラグ（複数正解にも対応）
   isCorrect  Boolean  @default(false)
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
+/// 受験1回分のメタ情報
 model ExamAttempt {
+  /// 受験ID
   id          String          @id @default(uuid())
+  /// 受験者（認証ユーザーID）
   userId      String
+  /// 使ったテンプレート
   templateId  String
   template    ExamTemplate    @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  /// 受験状態
   status      AttemptStatus   @default(IN_PROGRESS)
+  /// 受験開始日時
   startedAt   DateTime        @default(now())
+  /// 終了期限（開始 + durationSec）
   expiresAt   DateTime
+  /// 受験終了日時（終了時のみ）
   finishedAt  DateTime?
+  /// 終了理由（任意）
   endReason   EndReason?
+
+  /// スコア（0.0〜1.0：正答率）
   score       Float?
+  /// 合否（passThreshold と score により算出）
   isPassed    Boolean?
+  /// 実受験時間（秒。finishedAt - startedAt）
   durationSec Int?
+
+  /// この受験で出題された設問の一覧（1..questionCount）
   questions   AttemptQuestion[]
+
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  /// 受験者別の検索や集計で使用
   @@index([userId])
+  /// テンプレート別の検索や集計で使用
   @@index([templateId])
 }
 
+/// 受験中の「n問目」という単位（出題順・並び・見直し等を保持）
 model AttemptQuestion {
+  /// AttemptQuestion ID
   id                String        @id @default(uuid())
+  /// 親の受験
   attemptId         String
   attempt           ExamAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  /// 出題された設問
   questionId        String
   question          Question      @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  /// 出題順（1 始まり）
   orderIndex        Int
+  /// この受験における選択肢の表示順（固定）
   shuffledChoiceIds String[]
+  /// 見直しフラグ
   isMarked          Boolean       @default(false)
+  /// 回答済みであれば最終回答時刻
   answeredAt        DateTime?
+  /// 正誤（採点方式による。終了時に埋める運用も可）
   isCorrect         Boolean?
+
+  /// 回答（1問につき最大1レコード）
   answer            AttemptAnswer?
+
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  /// 同一受験内での出題順は一意
   @@unique([attemptId, orderIndex])
 }
 
+/// 回答（選択された選択肢ID配列を保持）
 model AttemptAnswer {
+  /// 回答ID
   id                String          @id @default(uuid())
+  /// 対象の出題（1対1）
   attemptQuestionId String          @unique
   attemptQuestion   AttemptQuestion @relation(fields: [attemptQuestionId], references: [id], onDelete: Cascade)
+
+  /// 選択肢IDの配列（SINGLEでも配列。重複なし想定）
   selectedChoiceIds String[]
+
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 }
