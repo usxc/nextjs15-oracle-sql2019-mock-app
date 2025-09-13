@@ -32,7 +32,7 @@ export default async function HistoryPage() {
                         attempt.score != null ? Math.round(attempt.score * 100) : null;
 
                     // 受験日時
-                    const startedAtText = attempt.startedAt.toLocaleString();
+                    const startedAtText = attempt.startedAt.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 
                     // 所要時間（秒→分、端数切り上げ）
                     const durationMinutes = attempt.durationSec
