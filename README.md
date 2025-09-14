@@ -113,18 +113,18 @@ flowchart LR
     UI[Exam UI]
   end
 
-  UI -->|HTTPS| NEXT[Next.js (App Router)]
-  NEXT -->|Prisma| DB[(PostgreSQL / Supabase)]
-  NEXT -->|Clerk SDK| CLERK[Clerk]
-  CLERK -->|Svix Webhook| WEBHOOK[/api/webhooks/clerk]
+  UI --> NEXT[Next.js (App Router)]
+  NEXT --> DB[(PostgreSQL/Supabase)]
+  NEXT --> CLERK[Clerk]
+  CLERK --> WEBHOOK[/api/webhooks/clerk]
 
   subgraph ExamFlow
     SA1[Server Action: createAttempt]
     SA2[Server Action: finishAttempt]
   end
 
-  NEXT -. SA1/SA2 .-> DB
-  NEXT -. verify auth .-> CLERK
+  NEXT -.-> DB
+  NEXT -.-> CLERK
 ```
 
 
@@ -157,8 +157,8 @@ erDiagram
   QUESTION {
     string id PK
     string templateId FK
-    string code UK
-    string type   // SINGLE | MULTI
+    string code
+    string type
     string text
     string explanation
   }
@@ -174,11 +174,11 @@ erDiagram
     string id PK
     string userId FK
     string templateId FK
-    string status       // IN_PROGRESS | FINISHED | EXPIRED
+    string status
     datetime startedAt
     datetime expiresAt
     datetime finishedAt
-    string   endReason  // USER_FINISH | TIMEOUT
+    string   endReason
     float    score
     bool     isPassed
     int      durationSec
@@ -188,8 +188,8 @@ erDiagram
     string id PK
     string attemptId FK
     string questionId FK
-    int    orderIndex UK
-    string[] shuffledChoiceIds
+    int    orderIndex
+    string shuffledChoiceIds
     bool   isMarked
     bool   isCorrect
     datetime answeredAt
@@ -197,8 +197,8 @@ erDiagram
 
   ATTEMPTANSWER {
     string id PK
-    string attemptQuestionId UK FK
-    string[] selectedChoiceIds
+    string attemptQuestionId FK
+    string selectedChoiceIds
   }
 ```
 
@@ -252,4 +252,3 @@ erDiagram
 ## ライセンス
 
 MIT License
-
