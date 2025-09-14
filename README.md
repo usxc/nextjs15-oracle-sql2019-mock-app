@@ -1,6 +1,6 @@
 # Oracle Master Silver SQL 2019 模擬試験アプリ (Next.js)
 
-教室の例ではなく、このリポジトリの実装に沿った「Silver SQL 2019 模擬試験」用の Web アプリです。Clerk による認証、Prisma + PostgreSQL（例: Supabase）による永続化を採用し、実際の CBT 体験に近い受験フロー（120分 / 78問 / 合格63%）を提供します。
+「Silver SQL 2019 模擬試験」用の Web アプリです。Clerk による認証、Prisma + PostgreSQL（例: Supabase）による永続化を採用し、実際の CBT 体験に近い受験フロー（120分 / 78問 / 合格63%）を提供します。
 
 
 ## 主な機能
