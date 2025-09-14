@@ -2,7 +2,6 @@
 
 教室の例ではなく、このリポジトリの実装に沿った「Silver SQL 2019 模擬試験」用の Web アプリです。Clerk による認証、Prisma + PostgreSQL（例: Supabase）による永続化を採用し、実際の CBT 体験に近い受験フロー（120分 / 78問 / 合格63%）を提供します。
 
----
 
 ## 主な機能
 
@@ -19,7 +18,6 @@
   - 結果（スコア/合否/誤答番号）→ 復習ページ（自分の回答・正解・解説）
 - 履歴: 受験履歴一覧（日時/スコア/合否/所要時間）
 
----
 
 ## 技術スタック
 
@@ -28,9 +26,6 @@
 - Prisma / PostgreSQL（例: Supabase）
 - Clerk（認証）/ Svix（Webhook 署名検証）
 
-メモ: Realtime は未使用（必要に応じて Supabase Realtime で拡張可能）。
-
----
 
 ## 必要要件
 
@@ -38,7 +33,6 @@
 - PostgreSQL 接続先（例: Supabase）
 - Clerk プロジェクト（Publishable/Secret Key、Webhook Secret）
 
----
 
 ## 環境変数 (.env.local)
 
@@ -64,7 +58,6 @@ CLERK_WEBHOOK_SECRET=whsec_xxx
 
 注意: `SUPABASE_SECRET_KEY`（service_role）はサーバーのみで使用。クライアントに渡さないでください。
 
----
 
 ## セットアップ
 
@@ -88,7 +81,6 @@ npm run dev
 
 データ投入は Supabase SQL エディタ等で行ってください（テンプレ・設問・選択肢のレコード作成）。
 
----
 
 ## スクリーンショット
 
@@ -112,7 +104,6 @@ npm run dev
 ![復習](docs/screenshots/review.png)
 ```
 
----
 
 ## アーキテクチャ
 
@@ -136,7 +127,6 @@ flowchart LR
   NEXT -. verify auth .-> CLERK
 ```
 
----
 
 ## ER 図（論理）
 
@@ -212,7 +202,6 @@ erDiagram
   }
 ```
 
----
 
 ## 運用手順（Ops）
 
@@ -231,7 +220,6 @@ erDiagram
   - API/Server Action は `attempt.userId === currentUserId` を常に検証
   - 締切判定はサーバーが最終権威（期限超過は 409/ロック）
 
----
 
 ## 主要な画面
 
@@ -244,7 +232,6 @@ erDiagram
 - `/exam/[attemptId]/result` 結果
 - `/exam/[attemptId]/[orderIndex]` 復習（自分の回答・正解・解説）
 
----
 
 ## API 一覧（抜粋）
 
@@ -261,7 +248,6 @@ erDiagram
   - `createAttempt({ userId, templateId })`
   - `finishAttempt({ attemptId, end: 'USER_FINISH' | 'TIMEOUT' })`
 
----
 
 ## ライセンス
 
