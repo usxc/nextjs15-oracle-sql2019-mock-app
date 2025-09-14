@@ -109,22 +109,16 @@ npm run dev
 
 ```mermaid
 flowchart LR
-  subgraph Browser
-    UI[Exam UI]
-  end
+  Browser["Exam UI"]
+  Next["Next.js App Router"]
+  DB["PostgreSQL / Supabase"]
+  Clerk["Clerk"]
+  Webhook["/api/webhooks/clerk"]
 
-  UI --> NEXT[Next.js (App Router)]
-  NEXT --> DB[(PostgreSQL/Supabase)]
-  NEXT --> CLERK[Clerk]
-  CLERK --> WEBHOOK[/api/webhooks/clerk]
-
-  subgraph ExamFlow
-    SA1[Server Action: createAttempt]
-    SA2[Server Action: finishAttempt]
-  end
-
-  NEXT -.-> DB
-  NEXT -.-> CLERK
+  Browser --> Next
+  Next --> DB
+  Next --> Clerk
+  Clerk --> Webhook
 ```
 
 
