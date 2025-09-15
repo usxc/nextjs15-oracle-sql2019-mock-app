@@ -1,10 +1,8 @@
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
-import Link from 'next/link';
-import ExamTimer from '@/components/ExamTimer';
-import QuestionForm from './question-form';
 import { canUpdateNow, finishAttempt } from '@/lib/exam-service';
+import QuestionPageClient from './QuestionPageClient';
 
 /**
  * 問題ページ（サーバーコンポーネント）
@@ -46,87 +44,34 @@ export default async function Page({ params: { attemptId, index } }: PageProps) 
     const totalQuestions = attempt.template.questionCount; // 全問題数
     const canUpdate = await canUpdateNow(attempt); // まだ回答変更が許されるか（時間内か）
 
+    const finishButton = (
+        <form
+            action={async () => {
+                'use server';
+                await finishAttempt({ attemptId, end: 'USER_FINISH' });
+                redirect(`/exam/${attemptId}/result`);
+            }}
+        >
+            <button className="rounded-md bg-red-600 px-4 py-2 text-white">終了して採点</button>
+        </form>
+    );
+
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
-            {/* ヘッダー: 進捗と残り時間 */}
-            <div className="flex items-center justify-between">
-                <div className="font-semibold">
-                    問題 {orderIndex} / {totalQuestions}
-                </div>
-                {/* タイマーには ISO 文字列を渡す */}
-                <ExamTimer expiresAt={attempt.expiresAt.toISOString()} />
-            </div>
-
-            {/* 問題本文と回答フォーム */}
-            <div className="space-y-4">
-                <div className="text-lg font-medium whitespace-pre-wrap">
-                    {attemptQuestion.question.text}
-                </div>
-                <QuestionForm
-                    attemptQuestionId={attemptQuestion.id}
-                    questionType={attemptQuestion.question.type}
-                    orderedChoiceIds={attemptQuestion.shuffledChoiceIds}
-                    allChoices={attemptQuestion.question.choices}
-                    initialSelectedChoiceIds={attemptQuestion.answer?.selectedChoiceIds ?? []}
-                    initialIsMarked={attemptQuestion.isMarked}
-                    isLocked={!canUpdate} // 時間切れなら編集不可
-                />
-            </div>
-
-            {/* ナビゲーションとアクション */}
-            <div className="flex gap-3">
-                {orderIndex > 1 && (
-                    <Link
-                        className="px-3 py-2 border rounded-md"
-                        href={`/exam/${attemptId}/question/${orderIndex - 1}`}
-                    >
-                        前へ
-                    </Link>
-                )}
-
-                {orderIndex < totalQuestions && (
-                    <Link
-                        className="px-3 py-2 border rounded-md"
-                        href={`/exam/${attemptId}/question/${orderIndex + 1}`}
-                    >
-                        次へ
-                    </Link>
-                )}
-
-                <Link
-                    className="ml-auto px-3 py-2 border rounded-md"
-                    href={`/exam/${attemptId}/summary`}
-                >
-                    サマリー
-                </Link>
-
-                <Link
-                    className="px-3 py-2 border rounded-md"
-                    href={`/exam/${attemptId}/review`}
-                >
-                    見直し一覧
-                </Link>
-
-                {/* サーバーアクション: 終了して採点 → 結果ページへリダイレクト */}
-                <form
-                    action={async () => {
-                        'use server';
-                        await finishAttempt({ attemptId, end: 'USER_FINISH' });
-                        redirect(`/exam/${attemptId}/result`);
-                    }}
-                >
-                    <button className="px-3 py-2 bg-red-600 text-white rounded-md">
-                        終了して採点
-                    </button>
-                </form>
-            </div>
-
-            {/* 時間切れの案内 */}
-            {!canUpdate && (
-                <div className="p-3 rounded-md bg-amber-100 border border-amber-300">
-                    時間切れです。回答や見直しはできません。「終了して採点」を押してください。
-                </div>
-            )}
-        </div>
+        <QuestionPageClient
+            attemptId={attemptId}
+            attemptQuestionId={attemptQuestion.id}
+            orderIndex={orderIndex}
+            totalQuestions={totalQuestions}
+            expiresAt={attempt.expiresAt.toISOString()}
+            templateName={attempt.template.name}
+            questionText={attemptQuestion.question.text}
+            questionType={attemptQuestion.question.type}
+            orderedChoiceIds={attemptQuestion.shuffledChoiceIds}
+            allChoices={attemptQuestion.question.choices}
+            initialSelectedChoiceIds={attemptQuestion.answer?.selectedChoiceIds ?? []}
+            initialIsMarked={attemptQuestion.isMarked}
+            isLocked={!canUpdate}
+            finishButton={finishButton}
+        />
     );
 }
