@@ -84,7 +84,6 @@ npm run dev
 
 ## スクリーンショット
 
-```md
 ### ホーム
 ![ホーム](docs/screenshots/home.png)
 
@@ -100,9 +99,8 @@ npm run dev
 ### 結果
 ![結果](docs/screenshots/result.png)
 
-### 復習（自分の回答・正解・解説）
-![復習](docs/screenshots/review.png)
-```
+### 受験履歴
+![受験履歴](docs/screenshots/history.png)
 
 
 ## アーキテクチャ
