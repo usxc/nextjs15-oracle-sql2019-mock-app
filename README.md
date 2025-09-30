@@ -23,7 +23,7 @@
 
 - Next.js 15 / React 19（App Router, Server Components）
 - TypeScript / Tailwind CSS v4（PostCSS）
-- Prisma / PostgreSQL（Supabase）
+- Prisma / PostgreSQL（Supabase でホスティング）
 - Clerk（認証）/ Svix（Webhook 署名検証）
 
 
