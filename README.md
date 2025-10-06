@@ -177,7 +177,7 @@ flowchart LR
   WEBHOOK -->|Prisma| DB
 ```
 
-## ER 図（論理）
+## ER図
 
 ```mermaid
 erDiagram
